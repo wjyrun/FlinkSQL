@@ -29,10 +29,19 @@ public class TableFileSource {
                 .field("id", DataTypes.STRING())
                 .field("ts",DataTypes.BIGINT())
                 .field("vc", DataTypes.INT());
-        tableEnv.connect(new FileSystem().path("D:\\gitProjects\\flink_sql_tutorials\\src\\main\\resources\\sensor.csv"))
-                .withFormat(new Csv().fieldDelimiter(',').lineDelimiter("\n"))
-                .withSchema(schema)
-                .createTemporaryTable("sensor");
+        tableEnv.executeSql("CREATE TEMPORARY  TABLE sensor (\n" +
+                "    id  STRING,\n" +
+                "    ts  BIGINT,\n" +
+                "    vc     INT\n" +
+                ") WITH (\n" +
+                "    'connector' = 'filesystem',\n" +
+                "    'path'     = 'E:\\local_github_repository\\FlinkSQL\\src\\main\\resources\\sensor.csv',\n" +
+                "    'format'    = 'csv'\n" +
+                ")");
+//        tableEnv.connect(new FileSystem().path("E:\\local_github_repository\\FlinkSQL\\src\\main\\resources\\sensor.csv"))
+//                .withFormat(new Csv().fieldDelimiter(',').lineDelimiter("\n"))
+//                .withSchema(schema)
+//                .createTemporaryTable("sensor");
 
         final Table sensor = tableEnv.from("sensor");
         final Table id = sensor.select($("id"),$("ts"),$("vc"));

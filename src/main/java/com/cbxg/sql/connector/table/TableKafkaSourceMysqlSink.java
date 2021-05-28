@@ -1,16 +1,9 @@
 package com.cbxg.sql.connector.table;
 
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.connector.jdbc.catalog.JdbcCatalog;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
-import org.apache.flink.table.descriptors.FileSystem;
-import org.apache.flink.table.descriptors.Json;
-import org.apache.flink.table.descriptors.Kafka;
-import org.apache.flink.table.descriptors.Schema;
-import org.apache.flink.types.Row;
 
 import static org.apache.flink.table.api.Expressions.$;
 
@@ -19,26 +12,11 @@ import static org.apache.flink.table.api.Expressions.$;
  * @date:2021/4/5
  * @description: table api kafka connector
  */
-public class TableKafkaSource {
+public class TableKafkaSourceMysqlSink {
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
-//        tableEnv.connect(
-//                new Kafka()
-//                .version("universal")
-//                .topic("transactions")
-//                        .startFromLatest()
-////                .startFromEarliest()
-//                .property("group.id","test_group").property("bootstrap.servers","10.168.100.15:9092")
-//        )
-//         .withFormat(new Json())
-//         .withSchema(new Schema()
-//                 .field("id", DataTypes.STRING())
-//                 .field("ts",DataTypes.BIGINT())
-//                 .field("vc", DataTypes.INT())
-//         )
-//         .createTemporaryTable("sensor");
 
         tableEnv.executeSql("CREATE TABLE sensor (\n" +
                 "    id  STRING,\n" +
@@ -58,12 +36,19 @@ public class TableKafkaSource {
                 .aggregate($("vc").sum().as("sum_vc"))
                 .select($("id"), $("sum_vc"));
 
-        DataStream<Tuple2<Boolean, Row>> resultDataStream = tableEnv.toRetractStream(select, Row.class);
-        resultDataStream.print();
+        tableEnv.executeSql("CREATE TABLE sensor1 (\n" +
+                "    id STRING,\n" +
+                "    sum_vc     INT,\n" +
+                "    PRIMARY KEY (id) NOT ENFORCED\n"       +
+                ") WITH (\n" +
+                "  'connector'  = 'jdbc',\n" +
+                "  'url'        = 'jdbc:mysql://localhost:3306/world',\n" +
+                "  'table-name' = 'spend_report',\n" +
+                "  'username'   = 'root',\n" +
+                "  'password'   = 'haier@2021'\n" +
+                ")");
 
-        env.execute("KafkaConnector");
-
-
+        select.executeInsert("sensor1");
 
     }
 }

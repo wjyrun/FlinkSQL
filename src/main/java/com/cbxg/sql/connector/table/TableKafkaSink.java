@@ -35,18 +35,31 @@ public class TableKafkaSink {
 
         Table select = table.where($("id").isEqual("sensor_01"))
                 .select($("id"), $("ts"), $("vc"));
-        tableEnv.connect(
-                new Kafka()
-                        .version("universal")
-                        .topic("sink_sensor")
-                        .property("bootstrap.servers","hadoop102:9092"))
-                .withFormat(new Json())
-                .withSchema(
-                        new Schema()
-                                .field("id", DataTypes.STRING())
-                                .field("ts", DataTypes.BIGINT())
-                                .field("vc", DataTypes.INT()))
-                .createTemporaryTable("sensor");
+//        tableEnv.connect(
+//                new Kafka()
+//                        .version("universal")
+//                        .topic("transactions")
+//                        .property("bootstrap.servers","10.168.100.15:9092"))
+//                .withFormat(new Json())
+//                .withSchema(
+//                        new Schema()
+//                                .field("id", DataTypes.STRING())
+//                                .field("ts", DataTypes.BIGINT())
+//                                .field("vc", DataTypes.INT()))
+//                .createTemporaryTable("sensor");
+
+        tableEnv.executeSql("CREATE TABLE sensor (\n" +
+                "  `id` STRING,\n" +
+                "  `ts` BIGINT,\n" +
+                "  `vc` INT\n" +
+                ") WITH (\n" +
+                "  'connector' = 'kafka',\n" +
+                "  'topic' = 'transactions',\n" +
+                "  'properties.bootstrap.servers' = '10.168.100.15:9092',\n" +
+                "  'properties.group.id' = 'test_group',\n" +
+                "  'scan.startup.mode' = 'earliest-offset',\n" +
+                "  'format' = 'json'\n" +
+                ")");
 
 
         select.executeInsert("sensor");
